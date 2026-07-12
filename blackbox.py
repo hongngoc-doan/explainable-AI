@@ -122,46 +122,6 @@ for k, v in {
     if k not in st.session_state: st.session_state[k] = v
 
 # ── Tivian/Unipark integration ────────────────────────────────────────────────
-# ── Admin: manage results/ folder ─────────────────────────────────────────────
-# Visit https://xai.ntk.fyi/1/?admin=1 to download/empty the results folder.
-# Mounted BEFORE the survey-bridge so participants arriving via Tivian
-# (?tic=...&pid=...) never see this -- they're missing the ?admin=1 param
-# and the function returns immediately.
-def _maybe_admin_results():
-    try:
-        if st.query_params.get("admin", "") != "1":
-            return
-    except Exception:
-        return
-    import glob, shutil, io, zipfile, datetime
-    files = sorted(glob.glob(os.path.join("results", "*")))
-    files = [f for f in files if os.path.isfile(f)]
-    st.title("🛠️ Manage results/ folder")
-    st.write(f"**{len(files)} file(s)** currently in `results/`.")
-    if files:
-        # Build an in-memory ZIP of every file at its original name
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-            for f in files:
-                z.write(f, arcname=os.path.basename(f))
-        st.download_button(
-            "📦 Download all as ZIP",
-            data       = buf.getvalue(),
-            file_name  = f"results-{datetime.datetime.now():%Y%m%d-%H%M%S}.zip",
-            mime       = "application/zip",
-            use_container_width=True,
-        )
-        if st.button("🔥 Empty folder now", type="primary", use_container_width=True):
-            for f in files:
-                try:
-                    os.remove(f) if os.path.isfile(f) else shutil.rmtree(f)
-                except Exception:
-                    pass
-            st.success(f"Deleted {len(files)} item(s).")
-            st.stop()
-    st.stop()
-_maybe_admin_results()
-
 from unipark_bridge import bootstrap_session_from_url, render_return_button
 bootstrap_session_from_url(condition="A")
 
